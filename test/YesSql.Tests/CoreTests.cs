@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using System;
 using System.Data;
 using System.Linq;
@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using YesSql.Collections;
+using YesSql.Indexes;
 using YesSql.Services;
 using YesSql.Sql;
 using YesSql.Tests.Indexes;
@@ -46,6 +47,7 @@ namespace YesSql.Tests
                 builder.DropMapIndexTable(nameof(ArticleByPublishedDate));
                 builder.DropMapIndexTable(nameof(PersonByName));
                 builder.DropMapIndexTable(nameof(PersonIdentity));
+                builder.DropMapIndexTable(nameof(OrderRelationIndex));
 
                 using (new NamedCollection("Collection1"))
                 {
@@ -101,6 +103,8 @@ namespace YesSql.Tests
                     );
 
                 builder.CreateMapIndexTable(nameof(PublishedArticle), column => { });
+
+                builder.CreateMapRelationIndexTable(nameof(OrderRelationIndex));
             }
         }
 
@@ -292,6 +296,48 @@ namespace YesSql.Tests
                 var prod = await session.GetAsync<Product>(productId);
                 Assert.NotNull(prod);
                 Assert.Equal("Milk", prod.Name);
+            }
+        }
+
+        [Fact]
+        public async Task ShouldNotSerializeReferencePropertyObject()
+        {
+            _store.RegisterIndexes<OrderRelationIndexProvider>();
+            int orderId;
+
+            using (var session = _store.CreateSession())
+            {
+                var product = new Product
+                {
+                    Cost = 3.99m,
+                    Name = "Milk",
+                };
+
+                session.Save(product);
+                await session.CommitAsync();
+
+                var order = new Order
+                {
+                    Customer = "customers/microsoft",
+                    OrderLines =
+                        {
+                            new OrderLine
+                            {
+                                ProductId = product.Id,
+                                Product = product,
+                                Quantity = 3
+                            },
+                        }
+                };
+                session.Save(order);
+                orderId = order.Id;
+                session.CommitAsync().Wait();
+            }
+
+            using (var session = _store.CreateSession())
+            {
+                var order = await session.GetAsync<Order>(orderId);
+                Assert.True(order.OrderLines.All(ol => ol.Product == null));
             }
         }
 

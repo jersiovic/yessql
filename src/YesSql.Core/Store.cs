@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using Roslyn.Utilities;
 using System;
 using System.Collections.Concurrent;
@@ -189,9 +189,9 @@ namespace YesSql
 
             var collection = CollectionHelper.Current.GetSafeName();
 
-            var tupe = new TypeCollectionTuple(target, collection);
+            var tuple = new TypeCollectionTuple(target, collection);
 
-            return Descriptors.GetOrAdd(tupe, key =>
+            return Descriptors.GetOrAdd(tuple, key =>
             {
                 var activator = DescriptorActivators.GetOrAdd(key.Type, type => MakeDescriptorActivator(type));
                 var context = activator();
@@ -221,7 +221,7 @@ namespace YesSql
         {
             return (int)IdGenerator.GetNextId(session, collection);
         }
-
+        
         public IStore RegisterIndexes(params IIndexProvider[] indexProviders)
         {
             foreach (var indexProvider in indexProviders)
@@ -229,6 +229,7 @@ namespace YesSql
                 if (indexProvider.CollectionName == null)
                 {
                     indexProvider.CollectionName = CollectionHelper.Current.GetSafeName();
+                    indexProvider.Store = this;
                 }
             }
 

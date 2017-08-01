@@ -4,6 +4,7 @@ using System.Data;
 using Dapper;
 using YesSql.Collections;
 using YesSql.Sql.Schema;
+using YesSql.Indexes;
 
 namespace YesSql.Sql
 {
@@ -45,6 +46,17 @@ namespace YesSql.Sql
         private string FormatTable(string table)
         {
             return _tablePrefix + table;
+        }
+
+        public SchemaBuilder CreateMapRelationIndexTable(string name)
+        {
+            Action<CreateTableCommand> table = column => column
+                        .Column<int>(nameof(RelationIndex.EntityId))
+                        .Column<string>(nameof(RelationIndex.EntityPath))
+                        .Column<string>(nameof(RelationIndex.EntityPropertyName))
+                        .Column<int>(nameof(RelationIndex.TargetDocumentId))
+                        .Column<int>(nameof(RelationIndex.TargetEntityId));
+            return CreateMapIndexTable(name, table);
         }
 
         public SchemaBuilder CreateMapIndexTable(string name, Action<CreateTableCommand> table)

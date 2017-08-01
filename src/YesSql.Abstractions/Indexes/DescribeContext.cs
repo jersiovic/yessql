@@ -23,7 +23,8 @@ namespace YesSql.Indexes
                     Reduce = kp.GetReduce(),
                     Delete = kp.GetDelete(),
                     GroupKey = kp.GroupProperty,
-                    IndexType = kp.IndexType
+                    IndexType = kp.IndexType,
+                    InitializeNestedEntitiesIds = kp.GetInitializeNestedEntitiesIds()
                 });
         }
 
@@ -36,7 +37,7 @@ namespace YesSql.Indexes
         {
             return For<TIndex, object>();
         }
-
+        
         public IMapFor<T, TIndex> For<TIndex, TKey>() where TIndex : IIndex
         {
             IList<IDescribeFor> descriptors;

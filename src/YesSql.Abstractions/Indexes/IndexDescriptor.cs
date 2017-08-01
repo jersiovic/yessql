@@ -12,6 +12,7 @@ namespace YesSql.Indexes
         public Func<IGrouping<object, IIndex>, IIndex> Reduce { get; set; }
         public Func<IIndex, IEnumerable<IIndex>, IIndex> Update { get; set; }
         public Func<IIndex, IEnumerable<IIndex>, IIndex> Delete { get; set; }
+        public Action<object, ISession> InitializeNestedEntitiesIds { get; set; }
         public PropertyInfo GroupKey { get; set; }
         public Type IndexType { get; set; }
     }

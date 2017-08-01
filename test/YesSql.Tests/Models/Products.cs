@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using YesSql.Attributes;
 
 namespace YesSql.Tests.Models
 {
@@ -23,7 +24,10 @@ namespace YesSql.Tests.Models
 
     public class OrderLine
     {
+        public int Id { get; set; }
         public int ProductId { get; set; }
+        [Reference(typeof(Product))]
+        public Product Product { get; set; }
         public int Quantity { get; set; }
     }
 }

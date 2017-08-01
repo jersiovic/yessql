@@ -1,4 +1,4 @@
-using Dapper;
+﻿using Dapper;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -57,6 +57,8 @@ namespace YesSql
             {
                 return;
             }
+
+            InitializeNestedEntitiesIds(entity);
 
             // is it a new object?
             if (_identityMap.TryGetDocumentId(entity, out int id))
@@ -585,6 +587,17 @@ namespace YesSql
                 return Expression.Lambda<Func<IIndex, object>>(convert, instance).Compile();
             });
         }
+
+        private void InitializeNestedEntitiesIds(object rootEntity)
+        {
+            foreach (var descriptor in _store.Describe(rootEntity.GetType()))
+            {
+                if (descriptor.InitializeNestedEntitiesIds == null)
+                    continue;
+                descriptor.InitializeNestedEntitiesIds(rootEntity, this);
+            }
+        }
+
 
         private void MapNew(Document document, object obj)
         {

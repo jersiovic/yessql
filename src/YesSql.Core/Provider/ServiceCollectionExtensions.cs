@@ -22,7 +22,6 @@ namespace Microsoft.Extensions.DependencyInjection
             var config = new Configuration();
             setupAction.Invoke(config);
             services.AddSingleton<IStore>(new Store(config));
-
             return services;
         }
     }

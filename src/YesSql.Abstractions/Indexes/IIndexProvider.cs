@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace YesSql.Indexes
 {
@@ -7,5 +8,6 @@ namespace YesSql.Indexes
         void Describe(IDescriptor context);
         Type ForType();
         string CollectionName { get; set; }
+        IStore Store { get; set; }
     }
 }

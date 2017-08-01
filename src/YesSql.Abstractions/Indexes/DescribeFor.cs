@@ -11,6 +11,7 @@ namespace YesSql.Indexes
         Func<object, IEnumerable<IIndex>> GetMap();
         Func<IGrouping<object, IIndex>, IIndex> GetReduce();
         Func<IIndex, IEnumerable<IIndex>, IIndex> GetDelete();
+        Action<object,ISession> GetInitializeNestedEntitiesIds();
         PropertyInfo GroupProperty { get; set; }
         Type IndexType { get; }
     }
@@ -19,6 +20,13 @@ namespace YesSql.Indexes
     {
         IGroupFor<TIndex> Map(Func<T, TIndex> map);
         IGroupFor<TIndex> Map(Func<T, IEnumerable<TIndex>> map);
+        IInitializeNestedEntitiesIds<T> MapRelation(Func<T, TIndex> map);
+        IInitializeNestedEntitiesIds<T> MapRelation(Func<T, IEnumerable<TIndex>> map);
+    }
+
+    public interface IInitializeNestedEntitiesIds<out T>
+    {
+        void InitializeNestedEntitiesIds(Action<T,ISession> initializeNestedEntitiesIds);
     }
 
     public interface IGroupFor<TIndex> where TIndex : IIndex
@@ -36,11 +44,12 @@ namespace YesSql.Indexes
         void Delete(Func<TIndex, IEnumerable<TIndex>, TIndex> delete = null);
     }
 
-    public class IndexDescriptor<T, TIndex, TKey> : IDescribeFor, IMapFor<T, TIndex>, IGroupFor<TIndex>, IReduceFor<TIndex, TKey>, IDeleteFor<TIndex> where TIndex : IIndex
+    public class IndexDescriptor<T, TIndex, TKey> : IDescribeFor, IMapFor<T, TIndex>, IGroupFor<TIndex>, IReduceFor<TIndex, TKey>, IDeleteFor<TIndex>, IInitializeNestedEntitiesIds<T> where TIndex : IIndex
     {
         private Func<T, IEnumerable<TIndex>> _map;
         private Func<IGrouping<TKey, TIndex>, TIndex> _reduce;
         private Func<TIndex, IEnumerable<TIndex>, TIndex> _delete;
+        private Action<T,ISession> _initializeNestedEntitiesIds;
         private IDescribeFor _reduceDescribeFor;
 
         public PropertyInfo GroupProperty { get; set; }
@@ -56,6 +65,23 @@ namespace YesSql.Indexes
         {
             _map = x => new[] { map(x) };
             return this;
+        }
+
+        public IInitializeNestedEntitiesIds<T> MapRelation(Func<T, IEnumerable<TIndex>> map)
+        {
+            _map = map;
+            return this;
+        }
+
+        public IInitializeNestedEntitiesIds<T> MapRelation(Func<T, TIndex> map)
+        {
+            _map = x => new[] { map(x) };
+            return this;
+        }
+
+        public void InitializeNestedEntitiesIds(Action<T, ISession> initializeNestedEntitiesIds)
+        {
+            _initializeNestedEntitiesIds = (x,session) => initializeNestedEntitiesIds(x,session);
         }
 
         public IReduceFor<TIndex, TKeyG> Group<TKeyG>(Expression<Func<TIndex, TKeyG>> group)
@@ -76,10 +102,10 @@ namespace YesSql.Indexes
 
             GroupProperty = property;
 
-            var reduceDescibeFor = new IndexDescriptor<T, TIndex, TKeyG>();
-            _reduceDescribeFor = reduceDescibeFor;
+            var reduceDescribeFor = new IndexDescriptor<T, TIndex, TKeyG>();
+            _reduceDescribeFor = reduceDescribeFor;
 
-            return reduceDescibeFor;
+            return reduceDescribeFor;
         }
 
         public IDeleteFor<TIndex> Reduce(Func<IGrouping<TKey, TIndex>, TIndex> reduce)
@@ -96,6 +122,11 @@ namespace YesSql.Indexes
         Func<object, IEnumerable<IIndex>> IDescribeFor.GetMap()
         {
             return x => _map((T)x).Cast<IIndex>();
+        }
+
+        Action<object,ISession> IDescribeFor.GetInitializeNestedEntitiesIds()
+        {
+            return (x,session) => _initializeNestedEntitiesIds((T)x,session);
         }
 
         Func<IGrouping<object, IIndex>, IIndex> IDescribeFor.GetReduce()
@@ -126,7 +157,6 @@ namespace YesSql.Indexes
 
             return (index, obj) => _delete((TIndex)index, obj.Cast<TIndex>());
         }
-
     }
 
     public class GroupedEnumerable<TKey, TIndex> : IGrouping<TKey, TIndex> where TIndex : IIndex

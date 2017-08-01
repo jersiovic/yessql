@@ -16,7 +16,7 @@ namespace YesSql.Indexes
         }
 
         public string CollectionName { get; set; }
-
+        public IStore Store { get; set; }
         public Type ForType()
         {
             return typeof(T);
