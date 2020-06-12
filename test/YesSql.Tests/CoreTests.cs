@@ -152,6 +152,14 @@ namespace YesSql.Tests
 
                     transaction.Commit();
                 }
+                using (var transaction = connection.BeginTransaction(_store.Configuration.IsolationLevel))
+                {
+                    var builder = new SchemaBuilder(_store.Configuration, transaction);
+                    builder.AlterTable(nameof(UserByRoleNameIndex), column => column
+                            .AlterColumn(nameof(UserByRoleNameIndex.RoleName), column => column.WithType(DbType.String, 100))
+                        );
+                    transaction.Commit();
+                }
             }
 
             _store.TypeNames[typeof(Person)] = "People";

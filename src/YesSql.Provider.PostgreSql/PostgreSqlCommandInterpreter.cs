@@ -15,7 +15,7 @@ namespace YesSql.Provider.PostgreSql
 
         public override void Run(StringBuilder builder, IAlterColumnCommand command)
         {
-            builder.AppendFormat("alter table {0} modify column {1} ",
+            builder.AppendFormat("alter table {0} alter column {1} ",
                             _dialect.QuoteForTableName(command.Name),
                             _dialect.QuoteForColumnName(command.ColumnName));
             var initLength = builder.Length;
@@ -23,7 +23,7 @@ namespace YesSql.Provider.PostgreSql
             // type
             if (command.DbType != DbType.Object)
             {
-                builder.Append(_dialect.GetTypeName(command.DbType, command.Length, command.Precision, command.Scale));
+                builder.AppendFormat("TYPE {0}",_dialect.GetTypeName(command.DbType, command.Length, command.Precision, command.Scale));
             }
             else
             {
